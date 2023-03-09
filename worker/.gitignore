@@ -9,3 +9,5 @@ build/
 /dist
 
 .mf
+
+.dev.vars

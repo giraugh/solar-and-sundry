@@ -1,4 +1,5 @@
-use data::{CreatePage, Page};
+use _worker_fetch::fetch;
+use data::{Chapter, CreatePageBody, Page};
 use serde_json::json;
 use worker::{kv::KvStore, *};
 
@@ -26,6 +27,7 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
         .post_async("/page/:number/publish", publish_page_route)
         .delete_async("/page/:number", delete_page_route)
         .get_async("/page/:number", get_page_route)
+        .get_async("/page/:number/image", get_page_image_route)
         .get_async("/chapter", get_all_chapters_route)
         .get_async("/chapter/:number", get_chapter_route)
         .run(req, env)
@@ -48,7 +50,7 @@ async fn get_page(ctx: &RouteContext) -> std::result::Result<Page, String> {
 
 async fn upsert_page_route(mut req: Request, ctx: RouteContext) -> Result<Response> {
     // Parse input as create page
-    let create_page = match req.json::<CreatePage>().await {
+    let create_page = match req.json::<CreatePageBody>().await {
         Ok(page) => page,
         Err(error) => return Response::error(format!("Failed to parse page: {}", error), 400),
     };
@@ -99,10 +101,37 @@ async fn get_page_route(_req: Request, ctx: RouteContext) -> Result<Response> {
     Response::from_json(&page)
 }
 
-async fn get_chapter_route(req: Request, ctx: RouteContext) -> Result<Response> {
-    Response::ok("todo!")
+async fn get_page_image_route(_req: Request, ctx: RouteContext) -> Result<Response> {
+    // Get page
+    let page = match get_page(&ctx).await {
+        Ok(page) => page,
+        Err(error) => return Response::error(error, 400),
+    };
+
+    // Return redirection to image
+    let account_hash = ctx
+        .var("ACCOUNT_HASH")
+        .expect("Can\t find ACCOUNT_HASH binding")
+        .to_string();
+    Response::redirect(page.image_url(&account_hash))
 }
 
-async fn get_all_chapters_route(req: Request, ctx: RouteContext) -> Result<Response> {
-    Response::ok("todo!")
+async fn get_chapter_route(_req: Request, ctx: RouteContext) -> Result<Response> {
+    // Parse chapter number
+    let Ok(chapter_number) = ctx.param("number").unwrap().parse::<usize>() else {
+        return Response::error("Expected numeric path parameter 'number'", 400);
+    };
+
+    // Find chapter
+    let Ok(Some(chapter)) = Chapter::get_by_number(&ctx.data, chapter_number).await else {
+        return Response::error(format!("Failed to find chapter number {}", chapter_number), 400);
+    };
+
+    Response::from_json(&chapter)
+}
+
+async fn get_all_chapters_route(_req: Request, ctx: RouteContext) -> Result<Response> {
+    // Get all chapters
+    let chapters = Chapter::get_all(&ctx.data).await?;
+    Response::from_json(&chapters)
 }

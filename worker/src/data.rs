@@ -1,5 +1,11 @@
+use std::collections::HashMap;
+
+use futures::future::try_join_all;
 use serde::{Deserialize, Serialize};
-use worker::kv::{KvError, KvStore};
+use worker::{
+    kv::{KvError, KvStore},
+    Url,
+};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Page {
@@ -10,14 +16,20 @@ pub struct Page {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-pub struct CreatePage {
+pub struct CreatePageBody {
     pub page_number: usize,
     pub chapter_number: usize,
     pub image_id: String,
 }
 
-impl From<CreatePage> for Page {
-    fn from(val: CreatePage) -> Self {
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Chapter {
+    pub chapter_number: usize,
+    pub pages: Vec<Page>,
+}
+
+impl From<CreatePageBody> for Page {
+    fn from(val: CreatePageBody) -> Self {
         Page {
             page_number: val.page_number,
             chapter_number: val.chapter_number,
@@ -25,12 +37,6 @@ impl From<CreatePage> for Page {
             is_published: false,
         }
     }
-}
-
-#[derive(Debug, Serialize, Deserialize)]
-pub struct Chapter {
-    pub chapter_number: usize,
-    pub pages: Vec<Page>,
 }
 
 impl Page {
@@ -57,21 +63,74 @@ impl Page {
         store.delete(&self.key()).await
     }
 
-    pub async fn get_image(&self) -> Option<()> {
-        todo!()
+    pub fn image_url(&self, account_hash: &str) -> Url {
+        // let account_hash =
+        //     std::env::var("ACCOUNT_HASH").expect("ACCOUNT_HASH environment var not set");
+        format!(
+            "https://imagedelivery.net/{}/{}/public",
+            account_hash, self.image_id
+        )
+        .parse()
+        .unwrap()
     }
 }
 
 impl Chapter {
     pub async fn get_by_number(
-        &self,
         store: &KvStore,
         chapter_number: usize,
     ) -> Result<Option<Self>, KvError> {
-        // TODO: for now I will just fetch every page and then filter for pages in this chapter
+        // for now I will just fetch every page and then filter for pages in this chapter
         // but we may want to have that indexed or cached or something
-        // let page_keys = store.list().prefix("page-").execute().await?;
-        // TODO: we gonna have to pull all the values individually rip lol
-        todo!()
+        let page_keys = store.list().prefix("page-".to_owned()).execute().await?;
+        let pages: Vec<Page> = try_join_all(
+            page_keys
+                .keys
+                .iter()
+                .map(|key| store.get(&key.name).json::<Page>()),
+        )
+        .await?
+        .into_iter()
+        .flatten()
+        .filter(|page| page.chapter_number == chapter_number)
+        .collect();
+
+        match pages.len() {
+            0 => Ok(None),
+            _ => Ok(Some(Self {
+                pages,
+                chapter_number,
+            })),
+        }
+    }
+
+    pub async fn get_all(store: &KvStore) -> Result<Vec<Self>, KvError> {
+        // Fetch all pages
+        let page_keys = store.list().prefix("page-".to_owned()).execute().await?;
+        let pages: Vec<Page> = try_join_all(
+            page_keys
+                .keys
+                .iter()
+                .map(|key| store.get(&key.name).json::<Page>()),
+        )
+        .await?
+        .into_iter()
+        .flatten()
+        .collect();
+
+        // Group pages into chapters
+        let mut chapters: HashMap<usize, Vec<Page>> = HashMap::new();
+        for page in pages {
+            chapters.entry(page.chapter_number).or_default().push(page);
+        }
+
+        // Return chapters as a vec
+        Ok(chapters
+            .into_iter()
+            .map(|(chapter_number, pages)| Self {
+                chapter_number,
+                pages,
+            })
+            .collect())
     }
 }
