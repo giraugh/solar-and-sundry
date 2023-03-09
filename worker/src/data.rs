@@ -7,7 +7,7 @@ use worker::{
     Url,
 };
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Page {
     pub page_number: usize,
     pub chapter_number: usize,
@@ -15,11 +15,18 @@ pub struct Page {
     pub is_published: bool,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Deserialize)]
 pub struct CreatePageBody {
     pub page_number: usize,
     pub chapter_number: usize,
     pub image_id: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PageResponse {
+    pub page_number: usize,
+    pub chapter_number: usize,
+    pub image_url: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -28,12 +35,18 @@ pub struct Chapter {
     pub pages: Vec<Page>,
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+pub struct ChapterResponse {
+    pub chapter_number: usize,
+    pub pages: Vec<PageResponse>,
+}
+
 impl From<CreatePageBody> for Page {
-    fn from(val: CreatePageBody) -> Self {
+    fn from(create_page: CreatePageBody) -> Self {
         Page {
-            page_number: val.page_number,
-            chapter_number: val.chapter_number,
-            image_id: val.image_id,
+            page_number: create_page.page_number,
+            chapter_number: create_page.chapter_number,
+            image_id: create_page.image_id,
             is_published: false,
         }
     }
@@ -73,6 +86,26 @@ impl Page {
         .parse()
         .unwrap()
     }
+
+    pub fn to_response(&self, url_base: Url) -> PageResponse {
+        // Compute image url for page
+        let image_url = {
+            let mut url = url_base;
+            url.path_segments_mut().unwrap().clear().extend([
+                "page",
+                &self.page_number.to_string(),
+                "image",
+            ]);
+            url
+        };
+
+        // Create response
+        PageResponse {
+            chapter_number: self.chapter_number,
+            page_number: self.page_number,
+            image_url: image_url.to_string(),
+        }
+    }
 }
 
 impl Chapter {
@@ -92,7 +125,7 @@ impl Chapter {
         .await?
         .into_iter()
         .flatten()
-        .filter(|page| page.chapter_number == chapter_number)
+        .filter(|page| page.chapter_number == chapter_number && page.is_published)
         .collect();
 
         match pages.len() {
@@ -116,6 +149,7 @@ impl Chapter {
         .await?
         .into_iter()
         .flatten()
+        .filter(|page| page.is_published)
         .collect();
 
         // Group pages into chapters
@@ -132,5 +166,17 @@ impl Chapter {
                 pages,
             })
             .collect())
+    }
+
+    pub fn to_response(&self, url_base: Url) -> ChapterResponse {
+        ChapterResponse {
+            chapter_number: self.chapter_number,
+            pages: self
+                .pages
+                .clone()
+                .into_iter()
+                .map(|page| page.to_response(url_base.clone()))
+                .collect(),
+        }
     }
 }
