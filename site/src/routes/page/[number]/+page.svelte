@@ -24,6 +24,10 @@
   const clearImageLoaded = (_: unknown) => { imageLoaded = false }
 </script>
 
+<svelte:head>
+  <title>SaS | Page {pageNumber}</title>
+</svelte:head>
+
 <div class="comic-wrapper">
   <p class="comic-label">ch{page.chapter_number} | p{page.page_number}</p>
   <div class="image-wrapper">
