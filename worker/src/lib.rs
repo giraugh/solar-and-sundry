@@ -9,6 +9,14 @@ const KV_NAMESPACE: &str = "SOLAR_AND_SUNDRY";
 
 type RouteContext = worker::RouteContext<KvStore>;
 
+macro_rules! headers {
+    ($($name:literal: $val:expr),*) => {{
+        let mut headers = Headers::new();
+        $(headers.set($name, $val).unwrap();)*
+        headers
+    }}
+}
+
 #[event(fetch)]
 pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Response> {
     // Generic utils
@@ -38,7 +46,7 @@ fn check_authorisation(
     ctx: &RouteContext,
 ) -> std::result::Result<(), Result<Response>> {
     // Get authorisation header
-    let Ok(Some(authorisation)) = req.headers().get("Authorisation") else {
+    let Ok(Some(authorisation)) = req.headers().get("Authorization") else {
         return Err(Response::error("Unauthenticated", 403));
     };
 
@@ -48,7 +56,7 @@ fn check_authorisation(
     };
 
     // Check scheme
-    if scheme != "Basic" {
+    if scheme != "Bearer" {
         return Err(Response::error("Unexpected authorisation scheme", 403));
     }
 
@@ -164,11 +172,9 @@ async fn get_page_image_route(_req: Request, ctx: RouteContext) -> Result<Respon
 
     // Create a request to get the image
     let mut request_init = RequestInit::new();
-    let request_init = request_init.with_headers({
-        let mut headers = Headers::new();
-        headers.set("User-Agent", "Rust Worker").unwrap();
-        headers
-    });
+    let request_init = request_init.with_headers(headers!(
+        "User-Agent": "SaS worker"
+    ));
 
     // Send the request
     let request = Request::new_with_init(image_url.as_ref(), request_init).unwrap();
@@ -178,11 +184,9 @@ async fn get_page_image_route(_req: Request, ctx: RouteContext) -> Result<Respon
     };
 
     // Forward the request with updated headers
-    Ok(response.with_headers({
-        let mut headers = Headers::new();
-        headers.set("User-Agent", "SaS worker").unwrap();
-        headers
-    }))
+    Ok(response.with_headers(headers!(
+        "User-Agent": "SaS worker"
+    )))
 }
 
 async fn get_chapter_route(req: Request, ctx: RouteContext) -> Result<Response> {
