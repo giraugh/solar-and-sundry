@@ -13,6 +13,7 @@ pub struct Page {
     pub chapter_number: usize,
     pub image_id: String,
     pub is_published: bool,
+    pub name: String,
 }
 
 #[derive(Debug, Deserialize)]
@@ -20,6 +21,7 @@ pub struct CreatePageBody {
     pub page_number: usize,
     pub chapter_number: usize,
     pub image_id: String,
+    pub name: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -27,6 +29,7 @@ pub struct PageResponse {
     pub page_number: usize,
     pub chapter_number: usize,
     pub image_url: String,
+    pub name: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -47,6 +50,7 @@ impl From<CreatePageBody> for Page {
             page_number: create_page.page_number,
             chapter_number: create_page.chapter_number,
             image_id: create_page.image_id,
+            name: create_page.name,
             is_published: false,
         }
     }
@@ -103,6 +107,7 @@ impl Page {
         PageResponse {
             chapter_number: self.chapter_number,
             page_number: self.page_number,
+            name: self.name.clone(),
             image_url: image_url.to_string(),
         }
     }
