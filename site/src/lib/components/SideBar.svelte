@@ -13,7 +13,6 @@
     <!-- svelte-ignore a11y-click-events-have-key-events -->
     <div class="scrim"
       on:click={close}
-      transition:fade
     />
     <div class="content">
       <div class="header">
@@ -34,11 +33,11 @@
     right: 0;
     top: 0;
     box-sizing: border-box;
+    --scrim-col: rgb(56 53 86 / 53%);
 
     .scrim {
       position: fixed;
       inset: 0;
-      background: #5d5d5d8f;
     }
 
     .content {
@@ -48,6 +47,7 @@
       color: var(--col-text-surface);
       padding: .5em 1.25em;
       z-index: 2;
+      box-shadow: 0px 0px 0px 1000px var(--scrim-col);
     }
   }
 
@@ -58,7 +58,7 @@
     margin-block-end: 1em;
     padding-block: .75em;
     padding-inline: .5em;
-    border-bottom: 1px solid var(--col-surface);
+    border-bottom: 2px solid var(--col-surface-deco);
   
     h2 { margin: 0; }
   

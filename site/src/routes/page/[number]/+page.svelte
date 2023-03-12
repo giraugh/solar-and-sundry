@@ -1,16 +1,14 @@
 <script lang="ts">
-	import { goto } from '$app/navigation';
-	import { ChevronLeft, ChevronRight } from 'lucide-svelte';
   import { page as pageStore } from '$app/stores'
   import z from 'zod'
 	import type { ComicPage } from '$lib/schemas/page';
-	import { fade, fly, slide } from 'svelte/transition';
+	import { fade } from 'svelte/transition';
+	import ComicControls from '$lib/components/ComicControls.svelte';
+	import TableOfContents from '$lib/components/TableOfContents.svelte';
 
   export let data;
 
   $: pageNumber = z.number({ coerce: true }).parse($pageStore.params.number)
-  $: hasNextPage = pageNumber !== data.pageLimits.last
-  $: hasPreviousPage = pageNumber !== data.pageLimits.first
 
   let page: ComicPage
   $: {
@@ -28,8 +26,16 @@
   <title>SaS | Page {pageNumber}</title>
 </svelte:head>
 
-<div class="comic-wrapper">
-  <p class="comic-label">ch{page.chapter_number} | p{page.page_number}</p>
+<section class="comic-section">
+  <div class="comic-labels">
+    <p class="comic-name">
+      {page.name}
+    </p>
+    <p class="comic-number">
+      ch{page.chapter_number} | p{page.page_number}
+    </p>
+  </div>
+  <ComicControls pageNumber={pageNumber} pageLimits={data.pageLimits} />
   <div class="image-wrapper">
     <p class="huge-text">{page.page_number}</p>
     {#key pageNumber}
@@ -43,22 +49,12 @@
         alt="comic page {page.page_number}" >
     {/key}
   </div>
-  <div class="controls">
-    {#if hasPreviousPage}
-      <a data-sveltekit-preload-data="hover" href="{String(page.page_number-1)}"><ChevronLeft /></a>
-    {:else}
-      <span><ChevronLeft /></span>
-    {/if}
-    {#if hasNextPage}
-      <a data-sveltekit-preload-data="hover" href="{String(page.page_number+1)}"><ChevronRight /></a>
-    {:else}
-      <span><ChevronRight /></span>
-    {/if}
-  </div>
-</div>
+  <ComicControls pageNumber={pageNumber} pageLimits={data.pageLimits} />
+</section>
 
 <style lang="scss">
-  .comic-wrapper {
+  .comic-section {
+    justify-self: center;
     display: flex;
     flex-direction: column;
     padding: 1em;
@@ -94,38 +90,19 @@
     }
   }
 
-  .comic-label {
-    width: max-content;
-    align-self: flex-end;
-    margin-block: 0 .5em;
+  .comic-labels {
+    display: flex;
+    justify-content: space-between;
+    /* width: max-content; */
+    margin-block: 0 .1em;
+  
+    p { 
+      margin-block: 0;
+    }
   }
 
   img.comic {
     display: block;
     width: 100%;
-  }
-
-  .controls {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: .5em;
-    margin-block-start: .5em;
-
-    a, span {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--col-surface);
-      border: none;
-      outline: none;
-      padding-block: .5em;
-      color: var(--col-background);
-      cursor: pointer;
-    }
-
-    span {
-      opacity: .5;
-      cursor: unset;
-    }
   }
 </style>

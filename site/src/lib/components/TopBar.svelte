@@ -16,7 +16,7 @@
   nav.topbar {
     display: flex;
     gap: 1em;
-    padding-inline: 1em;
+    padding-inline: .75em;
     align-items: center;
     background: var(--col-surface);
     min-height: 4em;

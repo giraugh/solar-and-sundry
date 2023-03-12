@@ -1,10 +1,10 @@
 :root {
   --col-background: #323054;
-  --col-surface: #9ca2ca;
+  --col-surface: #959de3;
   --col-surface-alt: #bfc1d1;
-  --col-surface-deco: #aeb1c6;
+  --col-surface-deco: #a6aacb;
   --col-text-body: #8784b2;
-  --col-text-surface: #506376;
+  --col-text-surface: #494f6e;
 
   --font-heading: system-ui,
                -apple-system,
