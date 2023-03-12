@@ -11,7 +11,7 @@
       <ol class="page-list">
         {#each chapter.pages as page}
           <li>
-            <a href="/page/{page.page_number}">
+            <a href="/comic/{page.page_number}">
               p{page.page_number}
               &mdash;
               {page.name}

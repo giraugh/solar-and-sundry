@@ -4,9 +4,8 @@
 	import type { ComicPage } from '$lib/schemas/page';
 	import { fade } from 'svelte/transition';
 	import ComicControls from '$lib/components/ComicControls.svelte';
-	import TableOfContents from '$lib/components/TableOfContents.svelte';
 
-  export let data;
+  export let data
 
   $: pageNumber = z.number({ coerce: true }).parse($pageStore.params.number)
 
