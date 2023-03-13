@@ -31,9 +31,7 @@
   
   .chapter-name {
     display: block;
-    background: var(--col-surface-deco);
-    padding: .5em;
-    border-radius: .3rem;
+    font-weight: bold;
   }
 
   ol {

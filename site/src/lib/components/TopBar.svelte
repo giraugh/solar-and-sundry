@@ -1,16 +1,18 @@
 <script>
-  import { Menu } from 'lucide-svelte'
+  import { BookOpen, Menu } from 'lucide-svelte'
   import discordLogo from '$lib/images/discord-mark-white.svg'
 
   export let sideBarOpen = false
 </script>
 
 <nav class="topbar">
-  <img class="logo" src="https://imagedelivery.net/zthi1l8fKrUGB5ig08mq-Q/6b7613e1-2834-4db0-ca26-f03b2e36df00/public" alt="Solar and Sundry Logo" />
-  <h1><a href="/about">Solar and Sundry</a></h1>
+  <a href="/">
+    <img class="logo" src="https://imagedelivery.net/zthi1l8fKrUGB5ig08mq-Q/6b7613e1-2834-4db0-ca26-f03b2e36df00/public" alt="Solar and Sundry Logo" />
+    <h1>Solar and Sundry</h1>
+  </a>
   <div class="spacer" />
-  <a href="https://discord.gg/gnDrvjWnWD" target="_blank"><img class="discord-logo" width="24" height="24" src="{discordLogo}" alt="discord logo"></a>
-  <button class="sidebar-btn" on:click={() => sideBarOpen = true}><Menu /></button>
+  <a title="discord server" href="https://discord.gg/gnDrvjWnWD" target="_blank"><img class="discord-logo" width="24" height="24" src="{discordLogo}" alt="discord logo"></a>
+  <button title="table of contents" class="sidebar-btn" on:click={() => sideBarOpen = true}><BookOpen /></button>
 </nav>
 
 <style lang="scss">
@@ -31,6 +33,12 @@
       text-decoration: none;
       color: inherit;
     }
+
+    a:first-of-type {
+      display: flex;
+      align-items: center;
+      gap: 1em;
+    }
   }
 
   .discord-logo {
@@ -44,7 +52,6 @@
   button {
     background: none;
     border: none;
-    outline: none;
     color: inherit;
   }
 

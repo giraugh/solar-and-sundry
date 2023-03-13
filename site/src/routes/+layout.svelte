@@ -7,11 +7,12 @@
   export let sideBarOpen = false
 </script>
 
-<TopBar bind:sideBarOpen={sideBarOpen} />
-
-<main>
-  <slot />
-</main>
+<div class="primary-content" inert={sideBarOpen}>
+  <TopBar bind:sideBarOpen={sideBarOpen} />
+  <main>
+    <slot />
+  </main>
+</div>
 
 <SideBar title="Table of Contents" bind:open={sideBarOpen}>
   <TableOfContents chapters={data.chapters} />
@@ -22,5 +23,9 @@
     display: flex;
     justify-content: center;
     padding-block-end: 2em;
+  }
+  
+  .primary-content {
+    display: contents;
   }
 </style>

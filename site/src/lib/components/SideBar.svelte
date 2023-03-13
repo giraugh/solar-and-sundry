@@ -1,6 +1,7 @@
 <script lang="ts">
 	import { fly, fade } from 'svelte/transition'
   import { X } from 'lucide-svelte'
+	import Button from './Button.svelte';
 
   export let title = "Sidebar";
   export let open = false
@@ -17,12 +18,13 @@
     <div class="content">
       <div class="header">
         <h2>{title}</h2>
-        <button class="close-btn" on:click={close}><X /></button>
+        <Button square on:click={close}><X /></Button>
       </div>
       <slot />
     </div>
   </nav>
 {/if}
+
 <svelte:window on:keyup={e => e.key === 'Escape' && open ? close() : null}></svelte:window>
 
 <style lang="scss">
@@ -61,18 +63,5 @@
     border-bottom: 2px solid var(--col-surface-deco);
   
     h2 { margin: 0; }
-  
-    button {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      background: var(--col-surface-deco);
-      border-radius: .3rem;
-      padding: .2em;
-      aspect-ratio: 1;
-      outline: none;
-      border: none;
-      font-weight: bold;
-    }
   }
 </style>

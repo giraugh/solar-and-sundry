@@ -53,7 +53,6 @@
       justify-content: center;
       background: var(--col-surface);
       border: none;
-      outline: none;
       padding-block: .5em;
       color: var(--col-background);
       cursor: pointer;

@@ -15,10 +15,6 @@
     if (!pageMaybe) throw new Error(`No such page with page number ${pageNumber}`)
     page = pageMaybe
   }
-
-  // Track image loading state
-  let imageLoaded = false
-  const clearImageLoaded = (_: unknown) => { imageLoaded = false }
 </script>
 
 <svelte:head>
@@ -39,10 +35,6 @@
     <p class="huge-text">{page.page_number}</p>
     {#key pageNumber}
       <img
-        in:fade="{{ duration: 400, delay: 200 }}"
-        use:clearImageLoaded
-        on:load={() => imageLoaded = true}
-        class:loading={!imageLoaded}
         class="comic"
         src="{page.image_url}"
         alt="comic page {page.page_number}" >
@@ -80,10 +72,6 @@
     }
 
     img {
-      /* Fade In */
-      transition: opacity .4s;
-      &.loading { opacity: 0; }
-
       position: absolute;
       inset: 0;
     }
