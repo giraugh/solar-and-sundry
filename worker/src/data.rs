@@ -84,7 +84,7 @@ impl Page {
         // let account_hash =
         //     std::env::var("ACCOUNT_HASH").expect("ACCOUNT_HASH environment var not set");
         format!(
-            "https://imagedelivery.net/{}/{}/public",
+            "https://imagedelivery.net/{}/{}/format=webp",
             account_hash, self.image_id
         )
         .parse()
