@@ -1,36 +1,44 @@
 :root {
-  --col-background: #323054;
-  --col-background-light: #3b3863;
-  --col-background-dark: #2a1c38;
-  --col-surface: #959de3;
-  --col-surface-alt: #bfc1d1;
-  --col-surface-deco: #a6aacb;
-  --col-text-body: #8784b2;
-  --col-text-surface: #414765;
+	--col-background: #323054;
+	--col-background-light: #3b3863;
+	--col-background-dark: #2a1c38;
+	--col-surface: #959de3;
+	--col-surface-alt: #bfc1d1;
+	--col-surface-deco: #a6aacb;
+	--col-text-body: #8784b2;
+	--col-text-surface: #414765;
 
-  --font-heading: system-ui,
-               -apple-system,
-               BlinkMacSystemFont,
-               'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
-  --font-body: 'Inconsolata', monospace;
+	--font-heading: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
+		Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+	--font-body: 'Inconsolata', monospace;
 
-  --grad-background: linear-gradient(to bottom, var(--col-background-light), var(--col-background-dark));
+	--grad-background: linear-gradient(
+		to bottom,
+		var(--col-background-light),
+		var(--col-background-dark)
+	);
 }
 
-html, body {
-  margin: 0;
-  padding: 0;
-  font-family: var(--font-body);
-  background: var(--grad-background);
-  color: var(--col-text-body);
-  color-scheme: light;
-  min-height: 100vh;
+html,
+body {
+	margin: 0;
+	padding: 0;
+	font-family: var(--font-body);
+	background: var(--grad-background);
+	color: var(--col-text-body);
+	color-scheme: light;
+	min-height: 100vh;
 }
 
-h1, h2, h3, h4, h5, h6 {
-  font-family: var(--font-heading);
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+	font-family: var(--font-heading);
 }
 
 button {
-  cursor: pointer;
+	cursor: pointer;
 }
