@@ -156,7 +156,7 @@ async fn get_page_route(req: Request, ctx: RouteContext) -> Result<Response> {
     }
 }
 
-async fn get_page_image_route(_req: Request, ctx: RouteContext) -> Result<Response> {
+async fn get_page_image_route(req: Request, ctx: RouteContext) -> Result<Response> {
     // Get page
     let page = match get_page(&ctx).await {
         Ok(page) => page,
@@ -173,7 +173,8 @@ async fn get_page_image_route(_req: Request, ctx: RouteContext) -> Result<Respon
     // Create a request to get the image
     let mut request_init = RequestInit::new();
     let request_init = request_init.with_headers(headers!(
-        "User-Agent": "SaS worker"
+        "User-Agent": "SaS worker",
+        "Accept": &req.headers().get("Accept").unwrap().unwrap_or_else(|| "image/svg+xml,image/*,*/*;q=0.8".to_owned())
     ));
 
     // Send the request

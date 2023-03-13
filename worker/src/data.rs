@@ -81,10 +81,8 @@ impl Page {
     }
 
     pub fn image_url(&self, account_hash: &str) -> Url {
-        // let account_hash =
-        //     std::env::var("ACCOUNT_HASH").expect("ACCOUNT_HASH environment var not set");
         format!(
-            "https://imagedelivery.net/{}/{}/format=webp",
+            "https://imagedelivery.net/{}/{}/public",
             account_hash, self.image_id
         )
         .parse()
