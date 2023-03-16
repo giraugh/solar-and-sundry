@@ -1,9 +1,13 @@
 <script lang="ts">
+	import dayjs from 'dayjs'
+
 	import type { ComicChapter } from '$lib/schemas/chapter'
 	import pageNumberStore from '$lib/stores/pageNumber'
+	import { Star } from 'lucide-svelte'
 
 	export let chapters: ComicChapter[]
   export let showLastRead = false
+  export let showDate = false
 </script>
 
 <ol>
@@ -19,7 +23,13 @@
 							{page.name}
 						</a>
 						{#if showLastRead && $pageNumberStore === page.page_number}
-							<em>(last read)</em>
+							<em class='last-read-mark'>
+								<span class="star-icon"><Star size="13" /></span>
+								<span class="last-read-label">(last read)</span>
+							</em>
+						{/if}
+						{#if showDate}
+							<em class="date-label">({dayjs(page.published_at).format('YYYY/MM/DD')})</em>
 						{/if}
 					</li>
 				{/each}
@@ -38,6 +48,15 @@
 		font-weight: bold;
 	}
 
+	.date-label {
+		float: right;
+		opacity: .75;
+
+		@media (max-width: 500px) {
+			 display: none;
+		}
+	}
+
 	ol {
 		list-style-type: none;
 		padding-inline-start: 0em;
@@ -53,6 +72,20 @@
 			a {
 				color: inherit;
 			}
+		}
+
+		@media (max-width: 500px) {
+			padding-inline-start: .5em;
+		}
+	}
+
+	.last-read-mark {
+
+		.star-icon { display: none; }
+
+		@media (max-width: 500px) {
+			.last-read-label { display: none; }	
+			.star-icon { display: initial; }
 		}
 	}
 </style>

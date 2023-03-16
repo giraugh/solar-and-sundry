@@ -1,10 +1,12 @@
 <script lang="ts">
-	import { page as pageStore } from '$app/stores'
 	import z from 'zod'
+	import { onMount } from 'svelte'
+
+	import { page as pageStore } from '$app/stores'
 	import type { ComicPage } from '$lib/schemas/page'
 	import ComicControls from '$lib/components/ComicControls.svelte'
-	import { onMount } from 'svelte'
 	import pageNumberStore from '$lib/stores/pageNumber'
+	import expect from '$lib/util/expect'
 
 	export let data
 
@@ -12,11 +14,10 @@
 
 	// Find the page with this number from the chapters info
 	let page: ComicPage
-	$: {
-		const pageMaybe = data.pages.find((page) => page.page_number === pageNumber)
-		if (!pageMaybe) throw new Error(`No such page with page number ${pageNumber}`)
-		page = pageMaybe
-	}
+	$: page = expect(
+		data.pages.find(page => page.page_number === pageNumber),
+		`No such page with number ${pageNumber}`
+	)
 
 	// After a delay, mark this page as read
 	onMount(() => {

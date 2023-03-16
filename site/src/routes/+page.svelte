@@ -33,7 +33,7 @@
 	</section>
 	<section class="recent-pages">
 		<h2>Archive</h2>
-		<TableOfContents showLastRead chapters={data.chapters} />
+		<TableOfContents showLastRead showDate chapters={data.chapters} />
 	</section>
 </div>
 
