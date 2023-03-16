@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 
+use chrono::{DateTime, Utc};
 use futures::future::try_join_all;
 use serde::{Deserialize, Serialize};
 use worker::{
@@ -8,12 +9,18 @@ use worker::{
 };
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+pub enum PublishedStatus {
+    Draft,
+    PublishedAt(DateTime<Utc>),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Page {
     pub page_number: usize,
     pub chapter_number: usize,
     pub image_id: String,
-    pub is_published: bool,
     pub name: String,
+    pub published_status: PublishedStatus,
 }
 
 #[derive(Debug, Deserialize)]
@@ -30,6 +37,7 @@ pub struct PageResponse {
     pub chapter_number: usize,
     pub image_url: String,
     pub name: String,
+    pub published_at: Option<DateTime<Utc>>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -51,7 +59,7 @@ impl From<CreatePageBody> for Page {
             chapter_number: create_page.chapter_number,
             image_id: create_page.image_id,
             name: create_page.name,
-            is_published: false,
+            published_status: PublishedStatus::Draft,
         }
     }
 }
@@ -59,6 +67,10 @@ impl From<CreatePageBody> for Page {
 impl Page {
     fn page_key(page_number: usize) -> String {
         format!("page-{}", page_number)
+    }
+
+    pub fn is_published(&self) -> bool {
+        matches!(self.published_status, PublishedStatus::PublishedAt(_))
     }
 
     pub fn key(&self) -> String {
@@ -107,6 +119,10 @@ impl Page {
             page_number: self.page_number,
             name: self.name.clone(),
             image_url: image_url.to_string(),
+            published_at: match self.published_status {
+                PublishedStatus::Draft => None,
+                PublishedStatus::PublishedAt(published_at) => Some(published_at),
+            },
         }
     }
 }
@@ -128,7 +144,7 @@ impl Chapter {
         .await?
         .into_iter()
         .flatten()
-        .filter(|page| page.chapter_number == chapter_number && page.is_published)
+        .filter(|page| page.chapter_number == chapter_number && page.is_published())
         .collect();
 
         match pages.len() {
@@ -152,7 +168,7 @@ impl Chapter {
         .await?
         .into_iter()
         .flatten()
-        .filter(|page| page.is_published)
+        .filter(|page| page.is_published())
         .collect();
 
         // Group pages into chapters

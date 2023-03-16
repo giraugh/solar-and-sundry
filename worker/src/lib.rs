@@ -1,4 +1,5 @@
-use data::{Chapter, CreatePageBody, Page};
+use chrono::Utc;
+use data::{Chapter, CreatePageBody, Page, PublishedStatus};
 use serde_json::json;
 use worker::{kv::KvStore, *};
 
@@ -98,12 +99,28 @@ async fn upsert_page_route(mut req: Request, ctx: RouteContext) -> Result<Respon
         Err(error) => return Response::error(format!("Failed to parse page: {}", error), 400),
     };
 
-    // Perform upsert
-    let page: Page = create_page.into();
-    page.save(&ctx.data).await?;
+    // Get current page
+    if let Ok(Some(mut current_page)) =
+        Page::get_by_number(&ctx.data, create_page.page_number).await
+    {
+        // Perform update
+        // TODO: improve this setup, perhaps go the other way around and prefer all fields from the create object holding aside
+        // publishing information
+        current_page.chapter_number = create_page.chapter_number;
+        current_page.image_id = create_page.image_id;
+        current_page.name = create_page.name;
+        current_page.save(&ctx.data).await?;
 
-    // Return okay
-    Response::from_json(&page).map(|r| r.with_status(201))
+        // Return okay
+        Response::from_json(&current_page).map(|r| r.with_status(201))
+    } else {
+        // Perform insert
+        let page: Page = create_page.into();
+        page.save(&ctx.data).await?;
+
+        // Return okay
+        Response::from_json(&page).map(|r| r.with_status(201))
+    }
 }
 
 async fn publish_page_route(req: Request, ctx: RouteContext) -> Result<Response> {
@@ -119,7 +136,7 @@ async fn publish_page_route(req: Request, ctx: RouteContext) -> Result<Response>
     };
 
     // Update page
-    page.is_published = true;
+    page.published_status = PublishedStatus::PublishedAt(Utc::now());
     page.save(&ctx.data).await?;
 
     // Return page
@@ -150,7 +167,7 @@ async fn get_page_route(req: Request, ctx: RouteContext) -> Result<Response> {
         Err(error) => return Response::error(error, 400),
     };
 
-    match page.is_published {
+    match page.is_published() {
         false => Response::error("Page is not published", 403),
         true => Response::from_json(&page.to_response(req.url().unwrap())),
     }
