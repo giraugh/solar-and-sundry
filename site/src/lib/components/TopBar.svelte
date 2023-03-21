@@ -30,10 +30,8 @@
 		padding-block: 0.25em;
 		padding-inline: 0.75em;
 		align-items: center;
-		background: var(--col-surface);
 		min-height: 4em;
-		color: var(--col-background);
-		box-shadow: 0px 2px 12px 2px;
+		color: var(--col-surface);
 
 		* {
 			margin: 0;
@@ -52,8 +50,7 @@
 	}
 
 	.discord-logo {
-		filter: brightness(0) saturate(100%) invert(18%) sepia(19%) saturate(1394%) hue-rotate(204deg)
-			brightness(94%) contrast(92%);
+		filter: brightness(0) saturate(100%) invert(75%) sepia(6%) saturate(6963%) hue-rotate(194deg) brightness(93%) contrast(90%);
 	}
 
 	.spacer {

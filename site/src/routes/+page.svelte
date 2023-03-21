@@ -48,6 +48,10 @@
 		color: var(--col-text-surface);
 		padding: 1.5em;
 		margin-block-start: 2em;
+		
+		@media (min-width: 600px) {
+			border-radius: .15rem;
+		}
 
 		h2:first-of-type {
 			margin-block-start: 0;
