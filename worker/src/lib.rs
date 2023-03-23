@@ -27,20 +27,32 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
     // Get keyv store
     let store = env.kv(KV_NAMESPACE)?;
 
-    // Setup routes
-    let router = Router::with_data(store);
-    router
-        .get("/", |_, _| Response::ok("SaS worker api"))
-        .put_async("/page", upsert_page_route)
-        .post_async("/page/:number/publish", publish_page_route)
-        .delete_async("/page/:number", delete_page_route)
-        .get_async("/page", get_all_pages_route)
-        .get_async("/page/:number", get_page_route)
-        .get_async("/page/:number/image", get_page_image_route)
-        .get_async("/chapter", get_all_chapters_route)
-        .get_async("/chapter/:number", get_chapter_route)
-        .run(req, env)
-        .await
+    // Configure cors
+    let cors = Cors::default().with_origins(vec!["*"]);
+    let response = if req.method() == Method::Options {
+        make_options_response(req).await
+    } else {
+        // Setup routes
+        let router = Router::with_data(store);
+        router
+            .get("/", |_, _| Response::ok("SaS worker api"))
+            .put_async("/page", upsert_page_route)
+            .post_async("/page/:number/publish", publish_page_route)
+            .delete_async("/page/:number", delete_page_route)
+            .get_async("/page", get_all_pages_route)
+            .get_async("/page/:number", get_page_route)
+            .get_async("/page/:number/image", get_page_image_route)
+            .get_async("/chapter", get_all_chapters_route)
+            .get_async("/chapter/:number", get_chapter_route)
+            .run(req, env)
+            .await
+    };
+
+    // Apply cors
+    response.map(|mut response| {
+        cors.apply_headers(response.headers_mut()).unwrap();
+        response
+    })
 }
 
 fn check_authorisation(
@@ -72,6 +84,13 @@ fn check_authorisation(
     }
 
     Ok(())
+}
+
+async fn make_options_response(req: Request) -> Result<Response> {
+    let headers = headers!(
+        "Access-Control-Allow-Headers": &req.headers().get("Access-Control-Request-Headers").unwrap().unwrap()
+    );
+    Ok(Response::empty().unwrap().with_headers(headers))
 }
 
 async fn get_page(ctx: &RouteContext) -> std::result::Result<Page, String> {
