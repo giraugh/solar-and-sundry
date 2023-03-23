@@ -34,6 +34,7 @@ pub async fn main(req: Request, env: Env, _ctx: worker::Context) -> Result<Respo
         .put_async("/page", upsert_page_route)
         .post_async("/page/:number/publish", publish_page_route)
         .delete_async("/page/:number", delete_page_route)
+        .get_async("/page", get_all_pages_route)
         .get_async("/page/:number", get_page_route)
         .get_async("/page/:number/image", get_page_image_route)
         .get_async("/chapter", get_all_chapters_route)
@@ -219,6 +220,17 @@ async fn get_chapter_route(req: Request, ctx: RouteContext) -> Result<Response> 
     };
 
     Response::from_json(&chapter.to_response(req.url().unwrap()))
+}
+
+async fn get_all_pages_route(req: Request, ctx: RouteContext) -> Result<Response> {
+    // Get all pages
+    let pages = Page::get_all(&ctx.data).await?;
+    Response::from_json(
+        &pages
+            .into_iter()
+            .map(|page| page.to_response(req.url().unwrap()))
+            .collect::<Vec<_>>(),
+    )
 }
 
 async fn get_all_chapters_route(req: Request, ctx: RouteContext) -> Result<Response> {

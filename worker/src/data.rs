@@ -125,6 +125,24 @@ impl Page {
             },
         }
     }
+
+    pub async fn get_all(store: &KvStore) -> Result<Vec<Self>, KvError> {
+        // Fetch all pages
+        let page_keys = store.list().prefix("page-".to_owned()).execute().await?;
+        let pages: Vec<Page> = try_join_all(
+            page_keys
+                .keys
+                .iter()
+                .map(|key| store.get(&key.name).json::<Page>()),
+        )
+        .await?
+        .into_iter()
+        .flatten()
+        .filter(|page| page.is_published())
+        .collect();
+
+        Ok(pages)
+    }
 }
 
 impl Chapter {
