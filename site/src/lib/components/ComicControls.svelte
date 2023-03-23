@@ -68,6 +68,11 @@
 				inset 0 1px 2px rgb(200 200 255 / .2),
 				inset 0 -2px 1px rgb(20 0 100 / .3);
 		}
+		
+		a:active {
+			box-shadow: inset 0 -3px 2px #c8c8ff33, inset 0 1px 2px #1400644d;
+			transform: translateY(1px);
+		}
 
 		span {
 			opacity: 0.5;
