@@ -18,7 +18,7 @@
 	<TableOfContents chapters={data.chapters} />
 </SideBar>
 
-<style lang="scss">
+<style>
 	main {
 		display: flex;
 		justify-content: center;

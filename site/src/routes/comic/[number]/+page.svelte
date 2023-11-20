@@ -15,7 +15,7 @@
 	// Find the page with this number from the chapters info
 	let page: ComicPage
 	$: page = expect(
-		data.pages.find(page => page.page_number === pageNumber),
+		data.pages.find((page) => page.page_number === pageNumber),
 		`No such page with number ${pageNumber}`
 	)
 

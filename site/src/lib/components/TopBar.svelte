@@ -23,7 +23,7 @@
 	>
 </nav>
 
-<style lang="scss">
+<style>
 	nav.topbar {
 		display: flex;
 		gap: 1em;
@@ -33,24 +33,32 @@
 		min-height: 4em;
 		color: var(--col-surface);
 
-		* {
+		& * {
 			margin: 0;
 		}
 
-		a {
+		& a {
 			text-decoration: none;
 			color: inherit;
 		}
 
-		a:first-of-type {
+		& a:first-of-type {
 			display: flex;
 			align-items: center;
 			gap: 1em;
 		}
 	}
 
+	@media (max-width: 600px) {
+		nav.topbar {
+			/* background: var(--col-surface-alt); */
+			/* color: var(--col-text-surface); */
+		}
+	}
+
 	.discord-logo {
-		filter: brightness(0) saturate(100%) invert(75%) sepia(6%) saturate(6963%) hue-rotate(194deg) brightness(93%) contrast(90%);
+		filter: brightness(0) saturate(100%) invert(75%) sepia(6%) saturate(6963%) hue-rotate(194deg)
+			brightness(93%) contrast(90%);
 	}
 
 	.spacer {

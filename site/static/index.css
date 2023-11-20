@@ -3,12 +3,14 @@
 	--col-background-light: #3b3863;
 	--col-background-dark: #2a1c38;
 	--col-surface: #959de3;
-	--col-surface-alt: #c5cbe9;
+	--col-surface-alt: #e2e6f7;
 	--col-surface-deco: #b1b6dc;
 	--col-text-body: #8784b2;
 	--col-text-surface: #414765;
 
-	--border-radius-button: .25rem;
+	/* Trying darker colour */
+	--col-background-light: #2c2a4f;
+    --col-background-dark: #1c1226;
 
 	--font-heading: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu,
 		Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
