@@ -3,7 +3,7 @@
 Solar and sundry is a sci-fi webcomic about building a climate where maybe there shouldn't be one. 
 Check it out at [sas.ewanb.me](https://sas.ewanb.me)!
 
-This repo contains the source for both the API, which runs as a cloudflare worker and the official site which is a sveltekit app.
+This repo contains the source for both the API, which runs on flyio and the official site which is a sveltekit app.
 Checkout the respective subdirectories for more info on each!
 
 ## Contributing

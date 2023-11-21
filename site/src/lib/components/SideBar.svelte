@@ -35,7 +35,7 @@
 		right: 0;
 		top: 0;
 		box-sizing: border-box;
-		--scrim-col: rgb(56 53 86 / 53%);
+		--scrim-col: rgb(23 20 49 / 34%);
 
 		.scrim {
 			position: fixed;
@@ -49,7 +49,7 @@
 			color: var(--col-text-surface);
 			padding: 0.5em 1.25em;
 			z-index: 2;
-			box-shadow: 0px 0px 0px 1000px var(--scrim-col);
+			box-shadow: 0px 0px 0px 100vmax var(--scrim-col);
 		}
 	}
 

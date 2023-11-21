@@ -45,6 +45,7 @@
 	<div class="image-wrapper">
 		<p class="huge-text">{page.page_number}</p>
 		{#key pageNumber}
+			<img class="comic thumbnail" src={page.thumbnail_url} alt="" />
 			<img class="comic" src={page.image_url} alt="comic page {page.page_number}" />
 		{/key}
 	</div>
@@ -63,7 +64,7 @@
 
 	.image-wrapper {
 		position: relative;
-		aspect-ratio: 1601 / 2561;
+		aspect-ratio: 1603 / 2561;
 		background: var(--col-surface-alt);
 
 		.huge-text {
@@ -79,9 +80,11 @@
 			opacity: 0.2;
 		}
 
-		img {
+		img.comic {
 			position: absolute;
 			inset: 0;
+			margin: 0;
+			display: block;
 		}
 	}
 
