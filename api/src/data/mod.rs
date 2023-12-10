@@ -1,20 +1,14 @@
+pub mod chapter;
 pub mod dto;
 pub mod page;
 
-use crate::DbClient;
+use crate::DbRef;
 
 pub trait Model: Sized {
-    type Id;
-
     fn table_sql() -> &'static str;
 
-    async fn get(db: DbClient, id: Self::Id) -> Result<Self, anyhow::Error>;
-    async fn get_all(db: DbClient) -> Result<Vec<Self>, anyhow::Error>;
-    async fn upsert(db: DbClient, id: Self::Id) -> Result<(), anyhow::Error>;
-    async fn delete(db: DbClient, id: Self::Id) -> Result<(), anyhow::Error>;
-
-    async fn create_table(db: DbClient) -> Result<(), anyhow::Error> {
-        db.lock().await.execute(Self::table_sql()).await?;
+    async fn create_table(db: DbRef) -> Result<(), anyhow::Error> {
+        db.lock().await.execute(Self::table_sql(), ()).await?;
         Ok(())
     }
 }
@@ -31,4 +25,24 @@ macro_rules! create_tables {
         $t::create_table($db.clone()).await.unwrap();
         create_tables!($db; $($ot),+);
     }}
+}
+
+pub struct RowsIter(libsql::Rows);
+
+pub trait RowsIterExt {
+    fn iter(self) -> RowsIter;
+}
+
+impl RowsIterExt for libsql::Rows {
+    fn iter(self) -> RowsIter {
+        RowsIter(self)
+    }
+}
+
+impl Iterator for RowsIter {
+    type Item = libsql::Result<libsql::Row>;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next().transpose()
+    }
 }

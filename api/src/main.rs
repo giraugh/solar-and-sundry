@@ -1,30 +1,60 @@
 mod data;
 
-use std::{env, net::SocketAddr, sync::Arc};
+use data::{
+    chapter::Chapter,
+    dto::{ChapterResponse, CreatePage, PageResponse},
+    page::Page,
+};
 
 use axum::{
-    extract::State,
+    extract::{Path, State},
     headers::authorization::{Authorization, Bearer},
     http::{Request, StatusCode},
     middleware::Next,
-    response::Response,
+    response::{IntoResponse, Response},
     routing::{delete, get, post, put},
-    Router, TypedHeader,
+    Json, Router, TypedHeader,
 };
-
+use dotenvy::dotenv;
+use libsql::Database;
+use std::{env, net::SocketAddr, sync::Arc};
 use tokio::sync::Mutex;
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
-pub type DbClient = Arc<Mutex<libsql_client::Client>>;
+pub type DbRef = Arc<Mutex<libsql::Connection>>;
 
-#[derive(Clone, Debug)]
+#[derive(Clone)]
 struct ApiState {
     pub api_token: String,
-    pub db: DbClient,
+    pub db_conn: DbRef,
+}
+
+#[derive(Debug)]
+struct ApiError(anyhow::Error);
+
+impl From<anyhow::Error> for ApiError {
+    fn from(value: anyhow::Error) -> Self {
+        ApiError(value)
+    }
+}
+
+type ApiResult<T> = Result<Json<T>, ApiError>;
+
+impl IntoResponse for ApiError {
+    fn into_response(self) -> Response {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Something went wrong: {}", self.0),
+        )
+            .into_response()
+    }
 }
 
 #[tokio::main]
 async fn main() {
+    // Init environment
+    dotenv().ok();
+
     // Init logging
     tracing_subscriber::registry()
         .with(fmt::layer())
@@ -35,22 +65,18 @@ async fn main() {
 
     // Get db client
     let db_url = std::env::var("DB_URL").unwrap_or("file:///tmp/sas.db".into());
-    let db = libsql_client::Client::from_config(libsql_client::Config {
-        url: url::Url::parse(&db_url).unwrap(),
-        auth_token: None,
-    })
-    .await
-    .unwrap();
-    let db = Arc::new(Mutex::new(db));
+    let db = Database::open(db_url).unwrap();
+    let db_conn = db.connect().unwrap();
+    let db_conn = Arc::new(Mutex::new(db_conn));
 
     // Create db tables if they don't exist
     use data::page::Page;
-    create_tables![db; Page];
+    create_tables![db_conn; Page];
 
     // Init api state
     let api_state = ApiState {
         api_token: env::var("API_TOKEN").expect("Expected API_TOKEN environment variable"),
-        db,
+        db_conn,
     };
 
     // Define private routes
@@ -60,18 +86,18 @@ async fn main() {
             check_auth_middleware,
         ))
         .route("/page/:number/publish", post(publish_page_route))
-        .route("/page/:number", put(upsert_page_route))
-        .route("/page/:number", delete(delete_page_route));
+        .route("/page/:number", delete(delete_page_route))
+        .route("/page", put(upsert_page_route));
 
     // Define routes
     let app = Router::new()
-        .with_state(api_state)
         .nest("/", private_routes)
         .route("/", get(root_route))
         .route("/page", get(list_pages_route))
         .route("/page/:number", get(page_detail_route))
         .route("/chapter", get(list_chapters_route))
-        .route("/chapter/:number", get(chapter_detail_route));
+        .route("/chapter/:number", get(chapter_detail_route))
+        .with_state(api_state);
 
     // Determine port
     let port = std::env::var("PORT").unwrap_or("3000".into());
@@ -107,30 +133,66 @@ async fn root_route() -> &'static str {
     "Solar and Sundry Api\n"
 }
 
-async fn publish_page_route() -> &'static str {
-    "publish"
+async fn publish_page_route(
+    State(api_state): State<ApiState>,
+    Path(page_number): Path<usize>,
+) -> ApiResult<String> {
+    Page::set_published(api_state.db_conn, page_number, true).await?;
+    Ok(Json("Published".into()))
 }
 
-async fn upsert_page_route() -> &'static str {
-    "upsert"
+async fn upsert_page_route(
+    State(api_state): State<ApiState>,
+    Json(create_page): Json<CreatePage>,
+) -> ApiResult<String> {
+    Page::upsert(api_state.db_conn, create_page.into()).await?;
+    Ok(Json("Created".into()))
 }
 
-async fn delete_page_route() -> &'static str {
-    "delete"
+async fn delete_page_route(
+    State(api_state): State<ApiState>,
+    Path(page_number): Path<usize>,
+) -> ApiResult<String> {
+    Page::delete(api_state.db_conn, page_number).await?;
+    Ok(Json("Deleted".into()))
 }
 
-async fn list_pages_route() -> &'static str {
-    "list pages"
+async fn list_pages_route(State(api_state): State<ApiState>) -> ApiResult<Vec<PageResponse>> {
+    let pages = Page::get_all_published(api_state.db_conn)
+        .await?
+        .into_iter()
+        .map(Into::into)
+        .collect();
+    Ok(Json(pages))
 }
 
-async fn page_detail_route() -> &'static str {
-    "page detail"
+async fn page_detail_route(
+    State(api_state): State<ApiState>,
+    Path(page_number): Path<usize>,
+) -> ApiResult<Option<PageResponse>> {
+    let page = Page::get(api_state.db_conn, page_number)
+        .await?
+        .map(Into::into);
+    // TODO: Ideally, this should also return a 404 if none
+    Ok(Json(page))
 }
 
-async fn list_chapters_route() -> &'static str {
-    "list chapters"
+async fn list_chapters_route(State(api_state): State<ApiState>) -> ApiResult<Vec<ChapterResponse>> {
+    let chapters = Chapter::get_all(api_state.db_conn)
+        .await?
+        .into_iter()
+        .map(Into::into)
+        .collect();
+    Ok(Json(chapters))
 }
 
-async fn chapter_detail_route() -> &'static str {
-    "chapter detail"
+async fn chapter_detail_route(
+    State(api_state): State<ApiState>,
+    Path(chapter_number): Path<usize>,
+) -> ApiResult<Option<ChapterResponse>> {
+    let chapter = Chapter::get(api_state.db_conn, chapter_number)
+        .await?
+        .map(Into::into);
+    // TODO: Ideally, this should also return a 404 if none
+    Ok(Json(chapter))
 }
