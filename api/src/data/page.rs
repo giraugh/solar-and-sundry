@@ -17,14 +17,14 @@ pub struct Page {
 }
 
 impl Page {
-    pub fn image_url(&self) -> String {
+    pub fn image_url(&self, variant: &str) -> String {
         let account_hash = env::var("CLOUDFLARE_IMAGES_ACCOUNT_HASH")
             .expect("Can\t find ACCOUNT_HASH binding")
             .to_string();
 
         format!(
-            "https://imagedelivery.net/{}/{}/public",
-            account_hash, self.image_id
+            "https://imagedelivery.net/{}/{}/{}",
+            account_hash, self.image_id, variant
         )
     }
 

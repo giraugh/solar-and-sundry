@@ -16,6 +16,7 @@ pub struct PageResponse {
     pub page_number: usize,
     pub chapter_number: usize,
     pub image_url: String,
+    pub thumbnail_url: String,
     pub name: String,
     pub published_at: Option<DateTime<Utc>>,
 }
@@ -35,7 +36,8 @@ impl From<CreatePage> for Page {
 impl From<Page> for PageResponse {
     fn from(value: Page) -> Self {
         Self {
-            image_url: value.image_url(),
+            image_url: value.image_url("public"),
+            thumbnail_url: value.image_url("publicthumbnail"),
             page_number: value.page_number,
             chapter_number: value.chapter_number,
             name: value.name,

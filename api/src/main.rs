@@ -9,7 +9,10 @@ use data::{
 use axum::{
     extract::{Path, State},
     headers::authorization::{Authorization, Bearer},
-    http::{Request, StatusCode},
+    http::{
+        header::{ACCEPT, AUTHORIZATION, CONTENT_TYPE},
+        Method, Request, StatusCode,
+    },
     middleware::Next,
     response::{IntoResponse, Response},
     routing::{delete, get, post, put},
@@ -19,6 +22,8 @@ use dotenvy::dotenv;
 use libsql::Database;
 use std::{env, net::SocketAddr, sync::Arc};
 use tokio::sync::Mutex;
+use tower_http::{cors::CorsLayer, trace::TraceLayer};
+use tracing::{info, level_filters::LevelFilter};
 use tracing_subscriber::{fmt, prelude::*, EnvFilter};
 
 pub type DbRef = Arc<Mutex<libsql::Connection>>;
@@ -58,14 +63,31 @@ async fn main() {
     // Init logging
     tracing_subscriber::registry()
         .with(fmt::layer())
-        .with(EnvFilter::from_default_env())
+        .with(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::INFO.into())
+                .from_env_lossy(),
+        )
         .init();
 
-    // TODO: Define cors layer
+    // CORS configuration
+    let cors = CorsLayer::very_permissive()
+        .allow_credentials(true)
+        .allow_headers([AUTHORIZATION, ACCEPT, CONTENT_TYPE])
+        .allow_methods([Method::PUT, Method::GET, Method::POST, Method::DELETE]);
 
-    // Get db client
-    let db_url = std::env::var("DB_URL").unwrap_or("file:///tmp/sas.db".into());
-    let db = Database::open(db_url).unwrap();
+    // Determine db url
+    let db = if let Ok(db_url) = std::env::var("DB_URL") {
+        let db_auth = std::env::var("DB_AUTH_TOKEN").expect("DB_AUTH_TOKEN to be present");
+        info!("Connecting to remote libsql db at {db_url}");
+        Database::open_remote(db_url, db_auth).unwrap()
+    } else {
+        let db_path = "file:///tmp/sas.db".to_owned();
+        info!("Using local libsql db at {db_path}");
+        Database::open(db_path).unwrap()
+    };
+
+    // Connect to db
     let db_conn = db.connect().unwrap();
     let db_conn = Arc::new(Mutex::new(db_conn));
 
@@ -97,12 +119,15 @@ async fn main() {
         .route("/page/:number", get(page_detail_route))
         .route("/chapter", get(list_chapters_route))
         .route("/chapter/:number", get(chapter_detail_route))
-        .with_state(api_state);
+        .with_state(api_state)
+        .layer(cors)
+        .layer(TraceLayer::new_for_http());
 
     // Determine port
     let port = std::env::var("PORT").unwrap_or("3000".into());
 
     // Start server
+    info!("Starting http server on port {port}");
     axum::Server::bind(&format!("0.0.0.0:{port}").parse().unwrap())
         .serve(app.into_make_service_with_connect_info::<SocketAddr>())
         .with_graceful_shutdown(async {
@@ -138,6 +163,7 @@ async fn publish_page_route(
     Path(page_number): Path<usize>,
 ) -> ApiResult<String> {
     Page::set_published(api_state.db_conn, page_number, true).await?;
+    info!("Published page {page_number}");
     Ok(Json("Published".into()))
 }
 
@@ -145,6 +171,7 @@ async fn upsert_page_route(
     State(api_state): State<ApiState>,
     Json(create_page): Json<CreatePage>,
 ) -> ApiResult<String> {
+    info!("Upserting page {}", &create_page.page_number);
     Page::upsert(api_state.db_conn, create_page.into()).await?;
     Ok(Json("Created".into()))
 }
@@ -154,6 +181,7 @@ async fn delete_page_route(
     Path(page_number): Path<usize>,
 ) -> ApiResult<String> {
     Page::delete(api_state.db_conn, page_number).await?;
+    info!("Deleted page {page_number}");
     Ok(Json("Deleted".into()))
 }
 
